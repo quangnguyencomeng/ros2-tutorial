@@ -1,0 +1,175 @@
+list package: ros2 pkg list
+
+code . -> chuyen toi vs code
+----------
+
+NODE:
+
+-h // help (ex: ros2 node -h)
+turtlesim turtlesim_node // con rua ( ros2 run turtlesim turtlesim_node)
+turtlesim turtle_teleop_key // dieu khien con rua (ros2 run turtlesim turtle_teleop_key)
+rqt // gui
+list //danh sach cac bien duoc goi (ros2 node list)
+node info <node_name> //info cua node (ros2 node info /turtlesim)
+----------
+TOPIC:
+	+ one way data is moved btw nodes, where 1 or more publisher nodes can connect to 1 or more subscriber nodes
+-t // de xem chi tiet (ros2 topic list -t)
+
+rqt_graph // xem so do lien ket cac node
+
+rqt --clear-config // reset graph neu co loi bi lag
+
+topic echo <topic_name> // xem ket qua, vi du:
+	ros2 topic echo /turtle1/cmd_vel
+
+	-> output:
+	ros2 turtlesim turtle_teleop_key
+	linear:
+  	x: 2.0
+  	y: 0.0
+	  z: 0.0
+	angular:
+	  x: 0.0
+	  y: 0.0
+  	z: 0.0
+	---
+	linear:
+	  x: 2.0
+	  y: 0.0
+	  z: 0.0
+	angular:
+	  x: 0.0
+	  y: 0.0
+	  z: 0.0
+
+topic info <topic_name> // xem info cua topic (vd:ros2 topic info /turtle1/cmd_vel)
+	-> output:
+	Type: geometry_msgs/msg/Twist
+	Publisher count: 1
+	Subscription count: 2
+
+---------
+interface show <type>//see interface definition
+	vd: ros2 interface show geometry_msgs/msg/Twist
+
+topic pub <topic_name> <msg_type> '<args>'
+	vd ros2 topic pub --once /turtle1/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 2.0, y: 1.2, z: 0.0}, angular: {x: 0.0, y: 3.6, z: 1.8}}"
+--once // lam mot lan roi thoat
+// phai ghi dung cu phap, vi du "x:0.0" la sai, phai la "x: 0.0"
+
+topic echo <topic_name>
+	vd: ros2 topic echo /turtle1/pose
+	-> output:
+	x: 8.17924976348877
+	y: 5.019974708557129
+	theta: -1.418803095817566
+	linear_velocity: 0.0
+	angular_velocity: 0.0
+hz <topic_name>// view frequency
+	vd: ros2 topic hz /turtle1/pose
+------
+SERVICES
+	+ Services are used to communicate btw nodes using a client-server model, where the server responds when the client makes a request
+
+list
+list -t
+type <service_name>// view the service another way
+	vd: ros2 service type /clear
+	-> std_srvs/srv/Empty (srv la giao tiep hai chieu request-response)
+
+find <service_type>//find services with specific type
+	vd: ros2 service find std_srvs/srv/Empty
+-> /clear
+	   /reset
+interface show <service_type> // see interface, khong dung service trong cau lenh
+	vd: ros2 interface show turtlesim/srv/Spawn
+
+call // calling a service
+	vd: ros2 service call /clear std_srvs/srv/Empty
+
+
+-------
+PARAMETERS
+param
+ 
+list #ros2 param list
+
+get <node_name> <parameter_name> <value> # ros set /turtlesim background_g 255 (background blue)
+
+dump <node_name> # cho biet cau hinh hien tai cua node duoi dinh dang YAML ros2 param dump /turtlesim
+	background_g, background_r, background_b: mã màu rgb
+	use_sim_time: false (dùng thời gian thực của máy), true (
+	qos_overrides: thiết lập về chất lượng dịch vụ (quality of service)
+
+> <file\_name> #chuyển thông tin về file # ros2 param dump /turtlesim > turtlesim.yaml
+
+load <node_name> <file_name> # load param ở file lên ngược lại node # ros2 param load /turtlesim turtlesim.yaml
+
+
+run <package_name> <executable_name> --ros-args --param-file <file_name> #load param on startup (ros2 run turtlesim turtlesim_node --ros-args --params-file turtlesim1.yaml
+
+
+------
+ACTIONS- Actions lets you communicate btw nodes with a goal, feedback, and result in a client-server fashion
+
+info # ros2 node info /teleop_turtle để biết loại action của node đó
+	# ros2 action info /turtle1/rotate_absolute
+	ros2 action info /turtle1/action/RotateAbsolute
+
+	->output:
+	Action: /turtle1/rotate_absolute
+	Action clients: 1
+	    /teleop_turtle #khách hàng tương tác
+	Action servers: 1
+	    /turtlesim	#server phản hồi
+list -t
+
+send_goal <action_name> <action_type> <goal> # send action goal, vd: ros2 action send_goal /turtle1/rotate_absolute turtlesim/action/RotateAbsolute "{theta: 1.57}"
+
+	->output:
+Waiting for an action server to become available...
+Sending goal:
+     theta: 1.57
+
+Goal accepted with ID: f38b2e144f754b3e8649b4e6e576737c
+
+Result:
+    delta: 0.0
+
+------
+VIEW LOGS - Rqt-console is a GUI used to view log messages in ROS
+
+ros2 run turtlesim turtlesim_node --ros-args --log-level WARN # just see warning, not info of node
+
+------
+LAUNCH MULTIPLE NODES- using a launch file, we can startup 2 nodes with just 1 command
+
+launch	<package_name> <launch_arguments> # ros2 launch turtlesim multisim.launch.py
+
+		#details of launch file
+	from launch import LaunchDescription
+	import launch_ros.actions
+	def generate_launch_description();
+		return ...([
+			launch_ros.actions.Node(
+	
+cat <file_name> # đọc file, vd: cat $(ros2 pkg prefix turtlesim)/share/turtlesim/launch/multisim.launch.py
+	$(ros2 pkg prefix turtlesim): cái này là để thay cho đường dẫn của folder turtlesim, còn bình thường nó sẽ là "cat opt/ros/humble/share/turtlesim/launch/multisim.launch.py"
+	$ là để chạy và lấy địa chỉ của folder/file này trước
+
+	->output:
+from launch import LaunchDescription
+import launch_ros.actions
+
+def generate_launch_description():
+    return LaunchDescription([
+        launch_ros.actions.Node(
+            namespace= "turtlesim1", package='turtlesim', executable='turtlesim_node', output='screen'), #node1
+        launch_ros.actions.Node(
+            namespace= "turtlesim2", package='turtlesim', executable='turtlesim_node', output='screen'), #node2
+    ])
+
+------
+RECORD AND PLAYBACK DATA
+record data using ros bags and played back from the recorded file
